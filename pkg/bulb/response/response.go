@@ -5,11 +5,14 @@ import (
 )
 
 // The response struct represent a bulb response.
+//
+// It can be a command response, a notification or an error. You can use the ResponseType field to know which one it is.
 type Response struct {
 	ID           int
 	Result       []string
 	Error        map[string]any
-	responseType string
+	Params       map[string]any
+	ResponseType string
 }
 
 // Attemp to guess the response type (error, command or notification) from the response content.
@@ -32,12 +35,7 @@ func ParseResponse(response string) (*Response, error) {
 		return nil, err
 	}
 
-	responseStruct.responseType = guessResponseType(responseStruct)
+	responseStruct.ResponseType = guessResponseType(responseStruct)
 
 	return responseStruct, nil
-}
-
-// Return the response type.
-func (r *Response) ResponseType() string {
-	return r.responseType
 }

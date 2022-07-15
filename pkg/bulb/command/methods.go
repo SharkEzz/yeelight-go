@@ -9,5 +9,4 @@ const (
 	SET_BRIGHT Method = "set_bright"
 	SET_POWER  Method = "set_power"
 	TOGGLE     Method = "toggle"
-	SET_NAME   Method = "set_name"
 )

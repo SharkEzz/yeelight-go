@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"time"
 
 	"github.com/SharkEzz/yeelight-go/pkg/bulb"
-	"github.com/SharkEzz/yeelight-go/pkg/bulb/command"
 )
 
 func main() {
@@ -25,9 +25,14 @@ func main() {
 	}
 	defer light.Disconnect()
 
-	str, err := light.SendCommand(command.SetBright(100, "smooth", 1000))
-	if err != nil {
-		panic(err)
-	}
-	fmt.Print(str)
+	go func() {
+		for light.IsConnected() {
+			res := <-light.ResponseChannel
+
+			fmt.Printf("%+v\n", res)
+		}
+	}()
+
+	light.GetProp([]any{"power", "bright"})
+	time.Sleep(time.Second * 2)
 }

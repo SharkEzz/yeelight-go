@@ -51,27 +51,11 @@ func NewCommand(method Method, params []any, id ...int) *Command {
 }
 
 // Ensure that an effect string is one of "smooth" or "sudden".
-func validateEffect(effect string) (string, error) {
+func ValidateEffect(effect string) (string, error) {
 	e := strings.ToLower(effect)
 	if e != "sudden" && e != "smooth" {
 		return "", fmt.Errorf("invalid effect string provided")
 	}
 
 	return e, nil
-}
-
-// Create a new command for setting the bulb brightness.
-func SetBright(brightness uint8, effect string, duration uint) *Command {
-	effect, err := validateEffect(effect)
-	if err != nil {
-		effect = "smooth"
-	}
-
-	if brightness < 1 {
-		brightness = 1
-	} else if brightness > 100 {
-		brightness = 100
-	}
-
-	return NewCommand(SET_BRIGHT, []any{brightness, effect, duration})
 }
