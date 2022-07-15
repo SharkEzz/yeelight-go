@@ -21,7 +21,7 @@ type Device struct {
 }
 
 // Create a new Bulb instance with no socket opened.
-func NewBulb(name, ip string) *Device {
+func NewDevice(name, ip string) *Device {
 	return &Device{
 		Name:        name,
 		IP:          ip,

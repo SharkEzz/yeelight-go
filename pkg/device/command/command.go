@@ -2,9 +2,7 @@ package command
 
 import (
 	"encoding/json"
-	"fmt"
 	"math/rand"
-	"strings"
 	"time"
 )
 
@@ -48,14 +46,4 @@ func NewCommand(method Method, params []any, id ...int) *Command {
 		method,
 		params,
 	}
-}
-
-// Ensure that an effect string is one of "smooth" or "sudden".
-func ValidateEffect(effect string) (string, error) {
-	e := strings.ToLower(effect)
-	if e != "sudden" && e != "smooth" {
-		return "", fmt.Errorf("invalid effect string provided")
-	}
-
-	return e, nil
 }

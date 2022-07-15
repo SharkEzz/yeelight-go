@@ -81,7 +81,7 @@ func parseResponse(response []string) *device.Device {
 	location := regexp.MustCompile(`(?i)yeelight://([0-9.]+):([0-9]+)`).FindAllStringSubmatch(response[4], 1)
 	ip := location[0][1]
 
-	light := device.NewBulb("", ip)
+	light := device.NewDevice("", ip)
 
 	return light
 }
