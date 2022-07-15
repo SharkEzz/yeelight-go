@@ -1,16 +1,16 @@
-package bulb
+package device
 
 import (
 	"bufio"
 	"fmt"
 	"net"
 
-	"github.com/SharkEzz/yeelight-go/pkg/bulb/command"
-	"github.com/SharkEzz/yeelight-go/pkg/bulb/response"
+	"github.com/SharkEzz/yeelight-go/pkg/device/command"
+	"github.com/SharkEzz/yeelight-go/pkg/device/response"
 )
 
 // The bulb struct represent a connection to a Yeelight light bulb
-type Bulb struct {
+type Device struct {
 	Name            string
 	IP              string
 	isConnected     bool
@@ -21,8 +21,8 @@ type Bulb struct {
 }
 
 // Create a new Bulb instance with no socket opened.
-func NewBulb(name, ip string) *Bulb {
-	return &Bulb{
+func NewBulb(name, ip string) *Device {
+	return &Device{
 		Name:        name,
 		IP:          ip,
 		isConnected: false,
@@ -30,48 +30,48 @@ func NewBulb(name, ip string) *Bulb {
 }
 
 // Open a socket to the bulb with the adress and port specified when instantiating a new Bulb
-func (b *Bulb) Connect() error {
-	if b.isConnected {
+func (d *Device) Connect() error {
+	if d.isConnected {
 		return fmt.Errorf("connection is already established")
 	}
 
-	conn, err := net.Dial("tcp4", fmt.Sprintf("%s:55443", b.IP))
+	conn, err := net.Dial("tcp4", fmt.Sprintf("%s:55443", d.IP))
 	if err != nil {
 		return err
 	}
 
-	b.isConnected = true
-	b.conn = conn
-	b.reader = bufio.NewReader(conn)
+	d.isConnected = true
+	d.conn = conn
+	d.reader = bufio.NewReader(conn)
 
-	b.ResponseChannel = make(chan *response.Response, 256)
+	d.ResponseChannel = make(chan *response.Response, 256)
 
-	go b.readLoop()
+	go d.readLoop()
 
 	return nil
 }
 
 // Close the connection to the bulb
-func (b *Bulb) Disconnect() error {
-	if !b.isConnected {
+func (d *Device) Disconnect() error {
+	if !d.isConnected {
 		return fmt.Errorf("connection is not established")
 	}
 
-	b.isConnected = false
-	b.reader = nil
-	close(b.ResponseChannel)
-	return b.conn.Close()
+	d.isConnected = false
+	d.reader = nil
+	close(d.ResponseChannel)
+	return d.conn.Close()
 }
 
-func (b *Bulb) IsConnected() bool {
-	return b.isConnected
+func (d *Device) IsConnected() bool {
+	return d.isConnected
 }
 
 // Send a command to the bulb.
 //
 // Prefer to use it with predefined command function like `SetBright`, `SetHSV`, etc... to avoid issues.
-func (l *Bulb) SendCommand(cmd *command.Command) error {
-	if !l.isConnected {
+func (d *Device) SendCommand(cmd *command.Command) error {
+	if !d.isConnected {
 		return fmt.Errorf("bulb is not connected")
 	}
 
@@ -80,20 +80,20 @@ func (l *Bulb) SendCommand(cmd *command.Command) error {
 		return err
 	}
 
-	_, err = l.conn.Write(cmdJson)
+	_, err = d.conn.Write(cmdJson)
 	if err != nil {
 		return err
 	}
-	l.LastCommandId = cmd.ID
+	d.LastCommandId = cmd.ID
 
 	return nil
 }
 
 // Loop while the bulb is connected, and read the responses from the bulb before sending
 // them to the ResponseChannel.
-func (b *Bulb) readLoop() {
-	for b.isConnected {
-		data, err := b.reader.ReadString('\n')
+func (d *Device) readLoop() {
+	for d.isConnected {
+		data, err := d.reader.ReadString('\n')
 		if err != nil {
 			return
 		}
@@ -103,16 +103,16 @@ func (b *Bulb) readLoop() {
 			return
 		}
 
-		b.ResponseChannel <- response
+		d.ResponseChannel <- response
 	}
 }
 
 /* COMMANDS */
 
-func (b *Bulb) GetProp(props []any) (int, error) {
+func (d *Device) GetProp(props []any) (int, error) {
 	cmd := command.NewCommand(command.GET_PROP, props)
 
-	err := b.SendCommand(cmd)
+	err := d.SendCommand(cmd)
 	if err != nil {
 		return 0, err
 	}
@@ -123,14 +123,14 @@ func (b *Bulb) GetProp(props []any) (int, error) {
 // Set the bulb brightness.
 //
 // The brightness is a value between 0 and 100.
-func (b *Bulb) SetBright(brightness uint8) error {
+func (d *Device) SetBright(brightness uint8) error {
 	if brightness < 1 {
 		brightness = 1
 	} else if brightness > 100 {
 		brightness = 100
 	}
 
-	err := b.SendCommand(command.NewCommand(command.SET_BRIGHT, []any{brightness, "smooth", 500}))
+	err := d.SendCommand(command.NewCommand(command.SET_BRIGHT, []any{brightness, "smooth", 500}))
 	if err != nil {
 		return err
 	}
@@ -141,14 +141,14 @@ func (b *Bulb) SetBright(brightness uint8) error {
 // Set the bulb color to the specified RGB values.
 //
 // The RGB values are values between 0 and 255.
-func (bu *Bulb) SetRGB(r, g, b uint32) error {
+func (d *Device) SetRGB(r, g, b uint32) error {
 	if r > 255 || g > 255 || b > 255 {
 		return fmt.Errorf("RGB values must be between 0 and 255")
 	}
 
 	rgb := (r << 16) | (g << 8) | b
 
-	err := bu.SendCommand(command.NewCommand(command.SET_RGB, []any{rgb, "smooth", 500}))
+	err := d.SendCommand(command.NewCommand(command.SET_RGB, []any{rgb, "smooth", 500}))
 	if err != nil {
 		return err
 	}
@@ -157,12 +157,12 @@ func (bu *Bulb) SetRGB(r, g, b uint32) error {
 }
 
 // Set the bulb color to the specified Hue and saturation values.
-func (b *Bulb) SetHSV(h uint16, s uint8) error {
+func (d *Device) SetHSV(h uint16, s uint8) error {
 	if s > 100 {
 		s = 100
 	}
 
-	err := b.SendCommand(command.NewCommand(command.SET_HSV, []any{h, s, "smooth", 500}))
+	err := d.SendCommand(command.NewCommand(command.SET_HSV, []any{h, s, "smooth", 500}))
 	if err != nil {
 		return err
 	}
@@ -171,7 +171,7 @@ func (b *Bulb) SetHSV(h uint16, s uint8) error {
 }
 
 // Set the bulb power state.
-func (b *Bulb) SetPower(power bool) error {
+func (d *Device) SetPower(power bool) error {
 	var powerStr string
 	if power {
 		powerStr = "on"
@@ -179,7 +179,7 @@ func (b *Bulb) SetPower(power bool) error {
 		powerStr = "off"
 	}
 
-	err := b.SendCommand(command.NewCommand(command.SET_POWER, []any{powerStr, "smooth", 500}))
+	err := d.SendCommand(command.NewCommand(command.SET_POWER, []any{powerStr, "smooth", 500}))
 	if err != nil {
 		return err
 	}
@@ -188,8 +188,8 @@ func (b *Bulb) SetPower(power bool) error {
 }
 
 // Toggle the bulb power state.
-func (b *Bulb) Toggle() error {
-	err := b.SendCommand(command.NewCommand(command.TOGGLE, []any{}))
+func (d *Device) Toggle() error {
+	err := d.SendCommand(command.NewCommand(command.TOGGLE, []any{}))
 	if err != nil {
 		return err
 	}
