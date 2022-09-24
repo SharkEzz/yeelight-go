@@ -67,13 +67,11 @@ func (c *YeelightClient) readResponse() {
 		data, err := rd.ReadString('\n')
 		if err != nil {
 			log.Println("error while reading response:", err)
-			// TODO: handle error
 		}
 
 		response, err := response.ParseResponse(data)
 		if err != nil {
 			log.Println("error while parsing response", err)
-			// TODO: handle error
 		}
 
 		c.Response <- response

@@ -18,12 +18,3 @@ func TestCommand_GenerateJSON(t *testing.T) {
 		t.Errorf("Expected data to be %s, got %s", `{"method":"set_rgb","params":[255,255,255]}`, string(data))
 	}
 }
-
-func TestNewCommand(t *testing.T) {
-	cmd1 := command.NewCommand(command.SET_RGB, []any{0xFF, 0xFF, 0xFF})
-	cmd2 := command.NewCommand(command.SET_POWER, []any{"off"})
-
-	if cmd1.ID == cmd2.ID {
-		t.Errorf("Expected command ID to be different, got %d", cmd1.ID)
-	}
-}

@@ -36,8 +36,22 @@ func (d *Device) OnResponse() *response.Response {
 	return <-d.client.GetResponse()
 }
 
+// Commands part
+
 func (d *Device) SetBright(bright uint8) error {
 	cmd := command.NewCommand(command.SET_BRIGHT, []any{bright, "smooth", 500})
+
+	return d.client.SendCommand(cmd)
+}
+
+func (d *Device) SetColor(color uint32) error {
+	cmd := command.NewCommand(command.SET_RGB, []any{color, "smooth", 500})
+
+	return d.client.SendCommand(cmd)
+}
+
+func (d *Device) Toggle() error {
+	cmd := command.NewCommand(command.TOGGLE, []any{})
 
 	return d.client.SendCommand(cmd)
 }

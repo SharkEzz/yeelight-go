@@ -10,6 +10,7 @@ import (
 	"github.com/SharkEzz/yeelight-go/pkg/device/response"
 )
 
+// Mock the client to test the device
 type FakeClient struct {
 	isConnected bool
 	response    chan *response.Response
@@ -34,6 +35,8 @@ func (c *FakeClient) SendCommand(cmd *command.Command) error {
 
 	switch cmd.Method {
 	case "set_bright":
+	case "toggle":
+	case "set_color":
 		c.response <- &response.Response{
 			ID:     cmd.ID,
 			Result: []string{"ok"},
@@ -46,8 +49,13 @@ func (c *FakeClient) SendCommand(cmd *command.Command) error {
 			},
 			ResponseType: "notification",
 		}
+	case "fake_error":
+		c.response <- &response.Response{
+			ID:    cmd.ID,
+			Error: map[string]any{"code": -1, "message": "error"},
+		}
 	default:
-		break
+		panic("unknown method")
 	}
 
 	return nil
@@ -70,7 +78,7 @@ func TestConnect(t *testing.T) {
 	defer device.Disconnect()
 
 	if !device.IsConnected() {
-		t.Errorf("device is not connected")
+		t.Error("device is not connected")
 	}
 }
 
@@ -86,7 +94,7 @@ func TestSetBright(t *testing.T) {
 	}
 
 	if err := light.Connect(); err != nil {
-		t.Errorf("failed to connect: %v", err)
+		t.Error("failed to connect", err)
 	}
 	defer light.Disconnect()
 
@@ -110,7 +118,7 @@ func TestNotification(t *testing.T) {
 	light := device.NewDevice(&FakeClient{})
 
 	if err := light.Connect(); err != nil {
-		t.Errorf("failed to connect: %v", err)
+		t.Error("failed to connect", err)
 	}
 	defer light.Disconnect()
 
@@ -131,5 +139,104 @@ func TestNotification(t *testing.T) {
 }
 
 func TestError(t *testing.T) {
-	// TODO
+	time.AfterFunc(5*time.Second, func() {
+		t.Log("timeout")
+		t.FailNow()
+	})
+	light := device.NewDevice(&FakeClient{})
+
+	if err := light.Connect(); err != nil {
+		t.Error("failed to connect", err)
+	}
+	defer light.Disconnect()
+
+	go func() {
+		res := light.OnResponse()
+		if res == nil || res.Error == nil || res.Error["code"] != -1 || res.Error["message"] != "error" {
+			t.Error("invalid error:", res)
+		}
+	}()
+
+	err := light.SendCommand(&command.Command{
+		ID:     1,
+		Method: "fake_error",
+	})
+	if err != nil {
+		t.Error("there should be no error", err)
+	}
+}
+
+func TestToggle(t *testing.T) {
+	time.AfterFunc(5*time.Second, func() {
+		t.Log("timeout")
+		t.FailNow()
+	})
+	light := device.NewDevice(&FakeClient{})
+
+	if err := light.Connect(); err != nil {
+		t.Error("failed to connect", err)
+	}
+	defer light.Disconnect()
+
+	go func() {
+		res := light.OnResponse()
+		if res == nil || len(res.Result) != 1 || res.Result[0] != "ok" {
+			t.Error("invalid response:", res)
+		}
+	}()
+
+	err := light.Toggle()
+	if err != nil {
+		t.Error("there should be no error", err)
+	}
+}
+
+func TestBright(t *testing.T) {
+	time.AfterFunc(5*time.Second, func() {
+		t.Log("timeout")
+		t.FailNow()
+	})
+	light := device.NewDevice(&FakeClient{})
+
+	if err := light.Connect(); err != nil {
+		t.Error("failed to connect", err)
+	}
+	defer light.Disconnect()
+
+	go func() {
+		res := light.OnResponse()
+		if res == nil || len(res.Result) != 1 || res.Result[0] != "ok" {
+			t.Error("invalid response:", res)
+		}
+	}()
+
+	err := light.SetBright(255)
+	if err != nil {
+		t.Error("there should be no error", err)
+	}
+}
+
+func TestColor(t *testing.T) {
+	time.AfterFunc(5*time.Second, func() {
+		t.Log("timeout")
+		t.FailNow()
+	})
+	light := device.NewDevice(&FakeClient{})
+
+	if err := light.Connect(); err != nil {
+		t.Error("failed to connect", err)
+	}
+	defer light.Disconnect()
+
+	go func() {
+		res := light.OnResponse()
+		if res == nil || len(res.Result) != 1 || res.Result[0] != "ok" {
+			t.Error("invalid response:", res)
+		}
+	}()
+
+	err := light.SetColor(0xFFFFFF)
+	if err != nil {
+		t.Error("there should be no error", err)
+	}
 }
