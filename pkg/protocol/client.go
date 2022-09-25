@@ -101,3 +101,7 @@ func (c *YeelightClient) SendCommand(cmd *command.Command) error {
 
 	return nil
 }
+
+func (c *YeelightClient) GetIP() string {
+	return c.ip
+}

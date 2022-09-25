@@ -28,6 +28,10 @@ func (c *FakeClient) Disconnect() error {
 	return nil
 }
 
+func (c *FakeClient) GetIP() string {
+	return "192.168.0.104"
+}
+
 func (c *FakeClient) SendCommand(cmd *command.Command) error {
 	if !c.isConnected {
 		return fmt.Errorf("client is not connected")
@@ -36,7 +40,6 @@ func (c *FakeClient) SendCommand(cmd *command.Command) error {
 	switch cmd.Method {
 	case "set_bright":
 	case "toggle":
-	case "set_color":
 		c.response <- &response.Response{
 			ID:     cmd.ID,
 			Result: []string{"ok"},
@@ -89,7 +92,7 @@ func TestSetBright(t *testing.T) {
 	})
 	light := device.NewDevice(&FakeClient{})
 
-	if err := light.SetBright(100); err == nil {
+	if _, err := light.SetBright(100); err == nil {
 		t.Error("device should not be connected")
 	}
 
@@ -105,7 +108,7 @@ func TestSetBright(t *testing.T) {
 		}
 	}()
 
-	if err := light.SetBright(255); err != nil {
+	if _, err := light.SetBright(255); err != nil {
 		t.Error("there should be no error", err)
 	}
 }
@@ -185,57 +188,7 @@ func TestToggle(t *testing.T) {
 		}
 	}()
 
-	err := light.Toggle()
-	if err != nil {
-		t.Error("there should be no error", err)
-	}
-}
-
-func TestBright(t *testing.T) {
-	time.AfterFunc(5*time.Second, func() {
-		t.Log("timeout")
-		t.FailNow()
-	})
-	light := device.NewDevice(&FakeClient{})
-
-	if err := light.Connect(); err != nil {
-		t.Error("failed to connect", err)
-	}
-	defer light.Disconnect()
-
-	go func() {
-		res := light.OnResponse()
-		if res == nil || len(res.Result) != 1 || res.Result[0] != "ok" {
-			t.Error("invalid response:", res)
-		}
-	}()
-
-	err := light.SetBright(255)
-	if err != nil {
-		t.Error("there should be no error", err)
-	}
-}
-
-func TestColor(t *testing.T) {
-	time.AfterFunc(5*time.Second, func() {
-		t.Log("timeout")
-		t.FailNow()
-	})
-	light := device.NewDevice(&FakeClient{})
-
-	if err := light.Connect(); err != nil {
-		t.Error("failed to connect", err)
-	}
-	defer light.Disconnect()
-
-	go func() {
-		res := light.OnResponse()
-		if res == nil || len(res.Result) != 1 || res.Result[0] != "ok" {
-			t.Error("invalid response:", res)
-		}
-	}()
-
-	err := light.SetColor(0xFFFFFF)
+	_, err := light.Toggle()
 	if err != nil {
 		t.Error("there should be no error", err)
 	}
